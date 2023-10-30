@@ -10,12 +10,19 @@ async function main() {
   const versionNumber = parseFloat(nodeVersion.replace('v', ''));
   if (versionNumber < 18.0) {
     shell.echo(`Error: Node.js version is not correct. Expected version above 18.0.0 but got ${nodeVersion}`);
+    shell.echo('If you have nvm installed, you can do this with the command:');
+    shell.echo('nvm use 18.17.1');
     shell.exit(1);
   }
 
   // Check if Netlify CLI is installed
   if (!shell.which('netlify')) {
     shell.echo('Error: Netlify CLI not found. Please install it first.');
+    shell.echo('You can install it with the command:');
+    shell.echo('npm install -g netlify-cli');
+    // explain they will have to auth with the Netlify CLI
+    shell.echo('You will also need to authenticate with Netlify using the command:');
+    shell.echo('netlify login');
     shell.exit(1);
   }
 
@@ -151,6 +158,12 @@ async function main() {
         fs.appendFileSync('.env', `${key}=${secretValue}\n`);
       }
     });
+  }
+
+  // Open the cloned repo in the code editor
+  if (shell.exec('code .').code !== 0) {
+    shell.echo('Error: Tried and failed to open the repo in VSCode');
+    shell.exit(1);
   }
   
 }
