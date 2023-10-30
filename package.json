@@ -1,0 +1,16 @@
+{
+  "name": "room302-template",
+  "version": "1.0.0",
+  "description": "A CLI for creating new projects from the room302 template",
+  "main": "index.js",
+  "bin": {
+    "room302-template": "./index.js"
+  },
+  "dependencies": {
+    "inquirer": "^7.3.3",
+    "shelljs": "^0.8.4"
+  },
+  "scripts": {
+    "start": "node index.js"
+  }
+}
