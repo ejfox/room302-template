@@ -2,22 +2,66 @@
 
 const inquirer = require('inquirer');
 const shell = require('shelljs');
+const fs = require('fs');
 
 async function main() {
+  // Check Node.js version
+  const nodeVersion = shell.exec('node -v', {silent:true}).stdout;
+  const versionNumber = parseFloat(nodeVersion.replace('v', ''));
+  if (versionNumber < 18.0) {
+    shell.echo(`Error: Node.js version is not correct. Expected version above 18.0.0 but got ${nodeVersion}`);
+    shell.exit(1);
+  }
+
+  // Check if Netlify CLI is installed
+  if (!shell.which('netlify')) {
+    shell.echo('Error: Netlify CLI not found. Please install it first.');
+    shell.exit(1);
+  }
+
   const answers = await inquirer.prompt([
     {
       type: 'input',
       name: 'projectName',
-      message: 'What is the name of the project?',
+      message: '🚀 What is the name of the project?',
       default: 'my-nuxt-project',
     },
-    // Add more prompts for other settings here
+    {
+      type: 'confirm',
+      name: 'useOpenAi',
+      message: '🤖 Do you want to use OpenAI?',
+      default: true,
+    },
+    {
+      type: 'confirm',
+      name: 'useNuxtUi',
+      message: '🎨 Do you want to use @nuxt/ui?',
+      default: true,
+    },
+    {
+      type: 'confirm',
+      name: 'usePinia',
+      message: '📦 Do you want to use @pinia/nuxt?',
+      default: true,
+    },
+    {
+      type: 'confirm',
+      name: 'useNetlify',
+      message: '☁️ Do you want to set up a Netlify deployment after cloning?',
+      default: false,
+    },
+    {
+      type: 'confirm',
+      name: 'useGithubForEnv',
+      message: '🔒 Do you want to set up your .env with your GitHub organization secrets?',
+      default: false,
+    },
   ]);
 
-  const { projectName } = answers;
+  const { projectName, useOpenAi, useNuxtUi, usePinia, useNetlify, useGithubForEnv } = answers;
 
   // Clone the template repo
-  if (shell.exec(`git clone https://github.com/your-org/room302-template ${projectName}`).code !== 0) {
+  if (shell.exec(`git clone https://github.com/ejfox/nuxt-template-2023 ${projectName}`).code !== 0) {
     shell.echo('Error: Git clone failed');
     shell.exit(1);
   }
@@ -25,13 +69,90 @@ async function main() {
   // Change directory to the new project
   shell.cd(projectName);
 
+  // Delete useOpenAi.js if user does not want to use OpenAI
+  if (!useOpenAi) {
+    fs.unlinkSync('./composables/useOpenAi.js');
+  }
+
+  // Update package.json with the project name
+  const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+  packageJson.name = projectName;
+  if (!useNuxtUi) {
+    const index = packageJson.dependencies['@nuxt/ui'];
+    if (index > -1) {
+      packageJson.dependencies.splice(index, 1);
+    }
+  }
+  if (!usePinia) {
+    const index = packageJson.dependencies['@pinia/nuxt'];
+    if (index > -1) {
+      packageJson.dependencies.splice(index, 1);
+    }
+  }
+  fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2));
+
+  // Update nuxt.config.ts with the selected modules
+  const nuxtConfig = fs.readFileSync('nuxt.config.ts', 'utf8');
+  let newNuxtConfig = nuxtConfig;
+  if (!useNuxtUi) {
+    newNuxtConfig = newNuxtConfig.replace("'@nuxt/ui',", "");
+  }
+  if (!usePinia) {
+    newNuxtConfig = newNuxtConfig.replace("'@pinia/nuxt',", "");
+  }
+  fs.writeFileSync('nuxt.config.ts', newNuxtConfig);
+
   // Install dependencies
   if (shell.exec('npm install').code !== 0) {
     shell.echo('Error: npm install failed');
     shell.exit(1);
   }
 
-  // Perform any other setup tasks here
+  // Set up Netlify deployment if user wants to use Netlify
+  if (useNetlify) {
+    // Initialize a new Netlify site
+    if (shell.exec('netlify init').code !== 0) {
+      shell.echo('Error: Netlify init failed');
+      shell.exit(1);
+    }
+
+    // Link the local repo to the Netlify site
+    if (shell.exec('netlify link').code !== 0) {
+      shell.echo('Error: Netlify link failed');
+      shell.exit(1);
+    }
+
+    // Set up continuous deployment
+    if (shell.exec('netlify build').code !== 0) {
+      shell.echo('Error: Netlify build failed');
+      shell.exit(1);
+    }
+  }
+
+  if (useGithubForEnv) {
+    // Copy .env-example to .env before we can read/write it
+    if (shell.cp('.env-example', '.env').code !== 0) {
+      shell.echo('Error: Failed to copy .env-example to .env');
+      shell.exit(1);
+    }
+    // Set up the .env based on the github organization secrets
+    if (shell.exec('gh secret list').code !== 0) {
+      shell.echo('Error: Failed to fetch GitHub secrets');
+      shell.exit(1);
+    }
+    // Assuming the secrets are named as per the keys in .env file
+    const envKeys = fs.readFileSync('.env', 'utf8').split('\n').map(line => line.split('=')[0]);
+    envKeys.forEach(key => {
+      if (shell.exec(`gh secret view ${key} --json`).code !== 0) {
+        shell.echo(`Error: Failed to fetch secret ${key}`);
+        shell.exit(1);
+      } else {
+        const secretValue = JSON.parse(shell.exec(`gh secret view ${key} --json`).stdout).namedValue.secret.value;
+        fs.appendFileSync('.env', `${key}=${secretValue}\n`);
+      }
+    });
+  }
+  
 }
 
 main();
