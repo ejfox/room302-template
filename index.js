@@ -67,8 +67,10 @@ async function main() {
 
   const { projectName, useOpenAi, useNuxtUi, usePinia, useNetlify, useGithubForEnv } = answers;
 
-  // Clone the template repo
-  if (shell.exec(`git clone https://github.com/ejfox/nuxt-template-2023 ${projectName}`).code !== 0) {
+  // Clone the template repo and log the output
+  shell.echo('Cloning the template repo...');
+  const cloneOutput = shell.exec(`git clone https://github.com/ejfox/nuxt-template-2023 ${projectName}`, {silent:false});
+  if (cloneOutput.code !== 0) {
     shell.echo('Error: Git clone failed');
     shell.exit(1);
   }
