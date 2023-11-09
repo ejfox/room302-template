@@ -15,14 +15,11 @@ async function main() {
     shell.exit(1);
   }
 
-  // Check if Netlify CLI is installed
-  if (!shell.which('netlify')) {
-    shell.echo('Error: Netlify CLI not found. Please install it first.');
+  // Check if Supabase CLI is installed
+  if (!shell.which('supabase')) {
+    shell.echo('Error: Supabase CLI not found. Please install it first.');
     shell.echo('You can install it with the command:');
-    shell.echo('npm install -g netlify-cli');
-    // explain they will have to auth with the Netlify CLI
-    shell.echo('You will also need to authenticate with Netlify using the command:');
-    shell.echo('netlify login');
+    shell.echo('npm install -g supabase');
     shell.exit(1);
   }
 
@@ -35,6 +32,12 @@ async function main() {
     },
     {
       type: 'confirm',
+      name: 'initSupabase',
+      message: '🚀 Do you want to initialize a Supabase project?',
+      default: false,
+    },
+    {
+      type: 'confirm',
       name: 'useOpenAi',
       message: '🤖 Do you want to use OpenAI?',
       default: true,
@@ -43,12 +46,6 @@ async function main() {
       type: 'confirm',
       name: 'useNuxtUi',
       message: '🎨 Do you want to use @nuxt/ui?',
-      default: true,
-    },
-    {
-      type: 'confirm',
-      name: 'usePinia',
-      message: '📦 Do you want to use @pinia/nuxt?',
       default: true,
     },
     {
@@ -65,7 +62,34 @@ async function main() {
     },
   ]);
 
-  const { projectName, useOpenAi, useNuxtUi, usePinia, useNetlify, useGithubForEnv } = answers;
+  const { projectName, initSupabase, useOpenAi, useNuxtUi, useNetlify, useGithubForEnv } = answers;
+
+  // Initialize a Supabase project if user wants to
+  if (initSupabase) {
+      // Check if Docker is installed
+    if (!shell.which('docker')) {
+      shell.echo('Error: Docker not found. Please install it first.');
+      shell.echo('You can install it with the command:');
+      shell.echo('https://docs.docker.com/get-docker/');
+      // shell.exit(1);
+      return
+    }
+    if (shell.exec('supabase init').code !== 0) {
+      shell.echo('Error: Supabase init failed');
+      shell.exit(1);
+    }
+  }
+
+  // Check if Netlify CLI is installed
+  if (!shell.which('netlify')) {
+    shell.echo('Error: Netlify CLI not found. Please install it first.');
+    shell.echo('You can install it with the command:');
+    shell.echo('npm install -g netlify-cli');
+    // explain they will have to auth with the Netlify CLI
+    shell.echo('You will also need to authenticate with Netlify using the command:');
+    shell.echo('netlify login');
+    shell.exit(1);
+  }
 
   // Clone the template repo and log the output
   shell.echo('Cloning the template repo...');
@@ -92,12 +116,6 @@ async function main() {
       packageJson.dependencies.splice(index, 1);
     }
   }
-  if (!usePinia) {
-    const index = packageJson.dependencies['@pinia/nuxt'];
-    if (index > -1) {
-      packageJson.dependencies.splice(index, 1);
-    }
-  }
   fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2));
 
   // Update nuxt.config.ts with the selected modules
@@ -106,9 +124,7 @@ async function main() {
   if (!useNuxtUi) {
     newNuxtConfig = newNuxtConfig.replace("'@nuxt/ui',", "");
   }
-  if (!usePinia) {
-    newNuxtConfig = newNuxtConfig.replace("'@pinia/nuxt',", "");
-  }
+
   fs.writeFileSync('nuxt.config.ts', newNuxtConfig);
 
   // Install dependencies
