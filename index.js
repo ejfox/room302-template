@@ -60,6 +60,12 @@ async function main() {
     },
     {
       type: 'confirm',
+      name: 'useNuxtContent',
+      message: '📚 Do you want to use Nuxt Content?',
+      default: true,
+    },
+    {
+      type: 'confirm',
       name: 'initSupabase',
       message: '🚀 Do you want to initialize a Supabase project?',
       default: false,
@@ -153,6 +159,27 @@ async function main() {
   if (!useNuxtUi) {
     newNuxtConfig = newNuxtConfig.replace("'@nuxt/ui',", "");
   }
+
+  // If the user does not want to use Nuxt Content, remove it from the modules and package.json
+  if (!useNuxtContent) {
+    newNuxtConfig = newNuxtConfig.replace("'@nuxt/content',", "");
+    try {
+      newNuxtConfig = newNuxtConfig.replace(/content: { documentDriven: true },/g, "");
+    } catch (error) {
+      console.error('An error occurred while removing content config from nuxt.config.ts file:', error);
+    }
+    delete packageJson.dependencies['@nuxt/content'];
+    fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2));
+    // Remove the /content/ folder and any Prose*.vue components in the /components/ folder
+    if (shell.exec('rm -rf ./content').code !== 0) {
+      shell.echo('🚨 Oops! Failed to remove /content/ folder 😿');
+    }
+    if (shell.exec('rm ./components/Prose*.vue').code !== 0) {
+      shell.echo('🚨 Oops! Failed to remove Nuxt Content Prose*.vue components 😿');
+    }
+  }
+
+
   // Write the updated nuxt.config.ts back to the file
   fs.writeFileSync('nuxt.config.ts', newNuxtConfig);
 
