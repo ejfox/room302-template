@@ -182,16 +182,8 @@ async function main() {
   // Set up Netlify deployment if user wants to use Netlify
   if (useNetlify) {
     // Initialize a new Netlify site
-    const siteDetails = shell.exec(`netlify api createSite --data '{ "name": "${projectName}" }'`, { silent: true }).stdout;
-    if (!siteDetails) {
+    if (shell.exec(`netlify init --name "${projectName}" --silent`).code !== 0) {
       shell.echo('🚨 Oops! Netlify site creation failed 😿');
-    }
-
-    const siteId = JSON.parse(siteDetails).id;
-
-    // Link the local repo to the Netlify site
-    if (shell.exec(`netlify link --id ${siteId}`).code !== 0) {
-      shell.echo('🚨 Oops! Netlify link failed 😿');
     }
 
     // Set up continuous deployment
