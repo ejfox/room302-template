@@ -233,7 +233,7 @@ async function main() {
   }
 
   // Install dependencies
-  if (shell.exec('npm install').code !== 0) {
+  if (shell.exec('yarn install').code !== 0) {
     shell.echo('🚨 Oops! npm install failed 😿');
   }
   
