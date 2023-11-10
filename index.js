@@ -136,13 +136,16 @@ async function main() {
   // Set up Netlify deployment if user wants to use Netlify
   if (useNetlify) {
     // Initialize a new Netlify site
-    if (shell.exec('netlify init').code !== 0) {
-      shell.echo('Error: Netlify init failed');
+    const siteDetails = shell.exec(`netlify api createSite --data '{ "name": "${projectName}" }'`, { silent: true }).stdout;
+    if (!siteDetails) {
+      shell.echo('Error: Netlify site creation failed');
       shell.exit(1);
     }
 
+    const siteId = JSON.parse(siteDetails).id;
+
     // Link the local repo to the Netlify site
-    if (shell.exec('netlify link').code !== 0) {
+    if (shell.exec(`netlify link --id ${siteId}`).code !== 0) {
       shell.echo('Error: Netlify link failed');
       shell.exit(1);
     }
