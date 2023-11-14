@@ -1,6 +1,6 @@
 {
   "name": "room302-template",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "A CLI for creating new projects from the room302 template",
   "main": "index.js",
   "bin": {
