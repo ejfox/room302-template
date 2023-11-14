@@ -3,7 +3,6 @@
 // Importing required modules
 const inquirer = require('inquirer'); // For interactive command line user interfaces
 const shell = require('shelljs'); // For executing shell commands
-const ora = require('ora'); // For creating spinners
 
 const fs = require('fs'); // For file system operations
 
@@ -118,17 +117,15 @@ async function main() {
 
   // Clone the template repo and log the output
   shell.echo('🚀 Let\'s clone the template repo... 🎉');
-  // Start a spinner
-  const spinner = ora('🔄 Cloning the template repo...').start();
   // Execute the git clone command
   const cloneOutput = shell.exec(`git clone https://github.com/ejfox/nuxt-template-2023 ${projectName}`, {silent:true});
   // If the git clone command fails, print an error message and exit
   if (cloneOutput.code !== 0) {
-    spinner.fail('🚨 Oops! Git clone failed 😿');
+    shell.echo('🚨 Oops! Git clone failed 😿');
     process.exit(1);
   }
-  // If the git clone command succeeds, stop the spinner and print a success message
-  spinner.succeed('🎉 Hooray! Successfully cloned the template repo 🚀');
+  // If the git clone command succeeds, print a success message
+  shell.echo('🎉 Hooray! Successfully cloned the template repo 🚀');
 
   // Change directory to the new project
   shell.cd(projectName);
@@ -260,4 +257,3 @@ async function main() {
 
 // Call the main function
 main();
-
