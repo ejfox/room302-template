@@ -171,7 +171,7 @@ async function main() {
     if (shell.exec('rm -rf ./content').code !== 0) {
       shell.echo('🚨 Oops! Failed to remove /content/ folder 😿');
     }
-    if (shell.exec('rm ./components/Prose*.vue').code !== 0) {
+    if (shell.exec('rm ./components/content/Prose*.vue').code !== 0) {
       shell.echo('🚨 Oops! Failed to remove Nuxt Content Prose*.vue components 😿');
     }
   }
