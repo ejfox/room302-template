@@ -97,7 +97,7 @@ async function main() {
   ]);
 
   // Destructure the answers object to get the individual answers
-  const { projectName, initSupabase, useOpenAi, useNuxtUi, useNetlify, useGithubForEnv, isRepoPublic, license } = answers;
+  const { projectName, initSupabase, useOpenAi, useNuxtContent, useNuxtUi, useNetlify, useGithubForEnv, isRepoPublic, license } = answers;
 
   // Initialize a Supabase project if user wants to
   if (initSupabase) {
