@@ -87,13 +87,13 @@ async function main() {
       message: '🚀 Do you want to make the GitHub repository public?',
       default: true,
     },
-    {
-      type: 'list',
-      name: 'license',
-      message: '📝 Please choose the license for your project:',
-      choices: ['mit', 'copyright', 'unlicense', 'ecl-2.0', 'CC-BY-4.0', 'proprietary'],
-      default: 'mit',
-    },
+    // {
+    //   type: 'list',
+    //   name: 'license',
+    //   message: '📝 Please choose the license for your project:',
+    //   choices: ['mit', 'copyright', 'unlicense', 'ecl-2.0', 'CC-BY-4.0', 'proprietary'],
+    //   default: 'mit',
+    // },
   ]);
 
   // Destructure the answers object to get the individual answers
@@ -110,7 +110,7 @@ async function main() {
       return
     }
     // If Docker is installed, initialize a Supabase project
-    if (shell.exec('supabase init').code !== 0) {
+    if (shell.exec('supabase init --with-vscode-workspace').code !== 0) {
       shell.echo('🚨 Oops! Supabase init failed 😿');
     }
   }
@@ -185,28 +185,37 @@ async function main() {
     shell.echo('🚨 Oops! Failed to remove existing git repo 😿');
   }
 
+  if (shell.exec('git init').code !== 0) {
+    shell.echo('🚨 Oops! Git init failed 😿');
+  }
 
   // Check that we have a git repo
   const repoVisibility = isRepoPublic ? 'public' : 'private';
-  // Check if the current directory is a git repository
-  if (shell.exec('git rev-parse --is-inside-work-tree').code !== 0) {
-    shell.echo('🚨 Oops! Current directory is not a git repository. Please initialize a git repository first. 🛠️');
-    // initialize git repo with project name
-    if (shell.exec(`git init ${projectName}`).code !== 0) {
-      shell.echo('🚨 Oops! Git init failed 😿');
-    }
-  }
   
 
   // Create a new GitHub repository from the current directory
-  if (shell.exec(`gh repo create ${projectName} --${repoVisibility} --confirm --source=${shell.pwd()} --license=${license}`).code !== 0) {
+  if (shell.exec(`gh repo create room302studio/${projectName} --${repoVisibility} --source=${shell.pwd()}`).code !== 0) {
     shell.echo('🚨 Oops! Failed to create GitHub repository 😿');
+  }
+
+
+  // Commit the initilization and push
+  if (shell.exec('git add .').code !== 0) {
+    shell.echo('🚨 Oops! Git add failed 😿');
+  }
+
+  if (shell.exec(`git commit -m "feat: begin project 🪴"`).code !== 0) {
+    shell.echo('🚨 Oops! Git commit failed 😿');
+  }
+
+  if (shell.exec('git push -u origin main').code !== 0) {
+    shell.echo('🚨 Oops! Git push failed 😿');
   }
 
   // Set up Netlify deployment if user wants to use Netlify
   if (useNetlify) {
     // Initialize a new Netlify site
-    if (shell.exec(`netlify init --name "${projectName}" --silent`).code !== 0) {
+    if (shell.exec(`netlify init`, { stdio: 'inherit' }).code !== 0) {
       shell.echo('🚨 Oops! Netlify site creation failed 😿');
     }
 
@@ -230,7 +239,7 @@ async function main() {
     envKeys.forEach(key => {
       const secretViewResult = shell.exec(`gh secret view ${key} --json`, { silent: true });
       if (secretViewResult.code !== 0) {
-        shell.echo(`🚨 Oops! Failed to fetch secret ${key} 😿`);
+        shell.echo(`🚨 Oops! .env secret ${key} was not found in GitHub org secrets`);
       } else {
         let secretValue;
         try {
@@ -257,3 +266,5 @@ async function main() {
 
 // Call the main function
 main();
+
+
