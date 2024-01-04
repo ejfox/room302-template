@@ -64,24 +64,24 @@ async function main() {
       message: '📚 Do you want to use Nuxt Content?',
       default: true,
     },
-    {
-      type: 'confirm',
-      name: 'initSupabase',
-      message: '🚀 Do you want to initialize a Supabase project?',
-      default: false,
-    },
-    {
-      type: 'confirm',
-      name: 'useNetlify',
-      message: '☁️ Do you want to set up a Netlify deployment after cloning?',
-      default: false,
-    },
-    {
-      type: 'confirm',
-      name: 'useGithubForEnv',
-      message: '🔒 Do you want to set up your .env with your GitHub organization secrets?',
-      default: false,
-    },
+    // {
+    //   type: 'confirm',
+    //   name: 'initSupabase',
+    //   message: '🚀 Do you want to initialize a Supabase project?',
+    //   default: false,
+    // },
+    // {
+    //   type: 'confirm',
+    //   name: 'useNetlify',
+    //   message: '☁️ Do you want to set up a Netlify deployment after cloning?',
+    //   default: false,
+    // },
+    // {
+    //   type: 'confirm',
+    //   name: 'useGithubForEnv',
+    //   message: '🔒 Do you want to set up your .env with your GitHub organization secrets?',
+    //   default: false,
+    // },
     {
       type: 'confirm',
       name: 'isRepoPublic',
@@ -121,7 +121,7 @@ async function main() {
   // Start a spinner
   const spinner = ora('🔄 Cloning the template repo...').start();
   // Execute the git clone command
-  const cloneOutput = shell.exec(`git clone https://github.com/ejfox/nuxt-template-2023 ${projectName}`, {silent:true});
+  const cloneOutput = shell.exec(`gh repo clone room302studio/nuxt-template ${projectName}`, {silent:true});
   // If the git clone command fails, print an error message and exit
   if (cloneOutput.code !== 0) {
     spinner.fail('🚨 Oops! Git clone failed 😿');
