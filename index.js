@@ -1,295 +1,340 @@
 #!/usr/bin/env node
 
 // Importing required modules
-const inquirer = require("inquirer"); // For interactive command line user interfaces
-const shell = require("shelljs"); // For executing shell commands
+const inquirer = require("inquirer");
+const shell = require("shelljs");
+const fs = require("fs");
 
-const fs = require("fs"); // For file system operations
-
-// Main function
-async function main() {
-  // Check Node.js version
-  // Execute the command to get Node.js version
-  const nodeVersion = shell.exec("node -v", { silent: true }).stdout;
-  // Parse the version number from the version string
-  const versionNumber = parseFloat(nodeVersion.replace("v", ""));
-  // Check if the version number is less than 18.0
-  if (versionNumber < 18.0) {
-    // If it is, print an error message and continue
-    shell.echo(
-      `🚨 Oops! Your Node.js version is not correct. We expected a version above 18.0.0 but got ${nodeVersion} 🙀`
-    );
-    shell.echo(
-      "👩‍🔧 If you have nvm installed, you can fix this with the command:"
-    );
-    shell.echo("nvm use 18.17.1 🚀");
+// Function to check Node.js version
+async function checkNodeVersion() {
+  try {
+    const nodeVersion = shell.exec("node -v", { silent: true }).stdout;
+    const versionNumber = parseFloat(nodeVersion.replace("v", ""));
+    if (versionNumber < 18.0) {
+      shell.echo(
+        `🚨 Oops! Your Node.js version is not correct. We expected a version above 18.0.0 but got ${nodeVersion} 🙀`
+      );
+      shell.echo(
+        "👩‍🔧 If you have nvm installed, you can fix this with the command:"
+      );
+      shell.echo("nvm use 18.17.1 🚀");
+    }
+  } catch (error) {
+    shell.echo("🚨 Error occurred while checking Node.js version:", error);
   }
+}
 
-  // Check if Supabase CLI is installed
-  // If the 'supabase' command is not found, print an error message and continue
-  if (!shell.which("supabase")) {
-    shell.echo("🚨 Oops! Supabase CLI not found. Please install it first. 🛠️");
-    shell.echo("👩‍🔧 You can install it with the command:");
-    shell.echo("npm install -g supabase 🚀");
-  }
-
-  // Check if GitHub CLI is installed
-  // If the 'gh' command is not found, print an error message and continue
-  if (!shell.which("gh")) {
-    shell.echo("🚨 Oops! GitHub CLI not found. Please install it first. 🛠️");
-    shell.echo("👩‍🔧 You can install it with the command:");
-    shell.echo("brew install gh 🚀");
-  }
-
-  // Prompt the user for input
-  const answers = await inquirer.prompt([
-    {
-      type: "input",
-      name: "projectName",
-      message: "🚀 What is the name of the project?",
-      default: "my-nuxt-project",
-    },
-    {
-      type: "confirm",
-      name: "useNuxtUi",
-      message: "🎨 Do you want to use @nuxt/ui?",
-      default: true,
-    },
-    {
-      type: "confirm",
-      name: "useNuxtContent",
-      message: "📚 Do you want to use @nuxt/content?",
-      default: true,
-    },
-    // {
-    //   type: 'confirm',
-    //   name: 'initSupabase',
-    //   message: '🚀 Do you want to initialize a Supabase project?',
-    //   default: false,
-    // },
-    // {
-    //   type: 'confirm',
-    //   name: 'useNetlify',
-    //   message: '☁️ Do you want to set up a Netlify deployment after cloning?',
-    //   default: false,
-    // },
-    // {
-    //   type: 'confirm',
-    //   name: 'useGithubForEnv',
-    //   message: '🔒 Do you want to set up your .env with your GitHub organization secrets?',
-    //   default: false,
-    // },
-    {
-      type: "confirm",
-      name: "isRepoPublic",
-      message: "🚀 Do you want to make the GitHub repository public?",
-      default: true,
-    },
-    // {
-    //   type: 'list',
-    //   name: 'license',
-    //   message: '📝 Please choose the license for your project:',
-    //   choices: ['mit', 'copyright', 'unlicense', 'ecl-2.0', 'CC-BY-4.0', 'proprietary'],
-    //   default: 'mit',
-    // },
-  ]);
-
-  // Destructure the answers object to get the individual answers
-  const {
-    projectName,
-    initSupabase,
-    useOpenAi,
-    useNuxtContent,
-    useNuxtUi,
-    useNetlify,
-    useGithubForEnv,
-    isRepoPublic,
-    license,
-  } = answers;
-
-  // Initialize a Supabase project if user wants to
-  if (initSupabase) {
-    // Check if Docker is installed
-    if (!shell.which("docker")) {
-      shell.echo("🚨 Oops! Docker not found. Please install it first. 🛠️");
+// Function to check if Supabase CLI is installed
+async function checkSupabaseCLI() {
+  try {
+    if (!shell.which("supabase")) {
+      shell.echo(
+        "🚨 Oops! Supabase CLI not found. Please install it first. 🛠️"
+      );
       shell.echo("👩‍🔧 You can install it with the command:");
-      shell.echo("https://docs.docker.com/get-docker/ 🚀");
-      // shell.exit(1);
-      return;
+      shell.echo("npm install -g supabase 🚀");
     }
-    // If Docker is installed, initialize a Supabase project
-    if (shell.exec("supabase init --with-vscode-workspace").code !== 0) {
-      shell.echo("🚨 Oops! Supabase init failed 😿");
-    }
+  } catch (error) {
+    shell.echo("🚨 Error occurred while checking Supabase CLI:", error);
   }
+}
 
-  // Clone the template repo and log the output
-  shell.echo("🚀 Let's clone the template repo... 🎉");
-  // Execute the git clone command
-  const cloneOutput = shell.exec(
-    `gh repo clone room302studio/nuxt-template ${projectName}`,
-    { silent: true }
-  );
-  // If the git clone command fails, print an error message and exit
-  if (cloneOutput.code !== 0) {
-    shell.echo("🚨 Oops! Git clone failed 😿");
+// Function to check if GitHub CLI is installed
+async function checkGitHubCLI() {
+  try {
+    if (!shell.which("gh")) {
+      shell.echo("🚨 Oops! GitHub CLI not found. Please install it first. 🛠️");
+      shell.echo("👩‍🔧 You can install it with the command:");
+      shell.echo("brew install gh 🚀");
+    }
+  } catch (error) {
+    shell.echo("🚨 Error occurred while checking GitHub CLI:", error);
+  }
+}
+
+// Function to prompt user for input
+async function promptUser() {
+  try {
+    const answers = await inquirer.prompt([
+      {
+        type: "input",
+        name: "projectName",
+        message: "🚀 What is the name of the project?",
+        default: "my-nuxt-project",
+      },
+      {
+        type: "confirm",
+        name: "useNuxtUi",
+        message: "🎨 Do you want to use @nuxt/ui?",
+        default: true,
+      },
+      {
+        type: "confirm",
+        name: "useNuxtContent",
+        message: "📚 Do you want to use @nuxt/content?",
+        default: true,
+      },
+      {
+        type: "confirm",
+        name: "isRepoPublic",
+        message: "🚀 Do you want to make the GitHub repository public?",
+        default: true,
+      },
+      {
+        type: "list",
+        name: "license",
+        message: "📝 Please choose the license for your project:",
+        choices: ["mit", "UNLICENSED", "ecl-2.0", "CC-BY-4.0", "proprietary"],
+        default: "mit",
+      },
+      {
+        type: "list",
+        name: "githubOrg",
+        message: "🏢 Choose the GitHub organization for the project:",
+        choices: ["personal", "room302studio", "other"],
+        default: "personal",
+      },
+      {
+        type: "input",
+        name: "customGithubOrg",
+        message: "🏢 Enter the name of your GitHub organization:",
+        when: (answers) => answers.githubOrg === "other",
+      },
+      {
+        type: "confirm",
+        name: "autoCommitPush",
+        message: "🚀 Do you want to automatically commit and push the changes?",
+        default: true,
+      },
+    ]);
+    return answers;
+  } catch (error) {
+    shell.echo("🚨 Error occurred while prompting for user input:", error);
     process.exit(1);
   }
-  // If the git clone command succeeds, print a success message
-  shell.echo("🎉 Hooray! Successfully cloned the template repo 🚀");
+}
 
-  // Change directory to the new project
-  shell.cd(projectName);
-
-  // Delete useOpenAi.js if user does not want to use OpenAI
-  if (!useOpenAi) {
-    fs.unlinkSync("./composables/useOpenAi.js");
+// Function to clone the template repo
+async function cloneTemplateRepo(projectName) {
+  try {
+    shell.echo("🚀 Let's clone the template repo... 🎉");
+    const cloneOutput = shell.exec(
+      `gh repo clone room302studio/nuxt-template ${projectName}`,
+      { silent: true }
+    );
+    if (cloneOutput.code !== 0) {
+      shell.echo("🚨 Oops! Git clone failed 😿");
+      process.exit(1);
+    }
+    shell.echo("🎉 Hooray! Successfully cloned the template repo 🚀");
+  } catch (error) {
+    shell.echo("🚨 Error occurred while cloning the template repo:", error);
+    process.exit(1);
   }
+}
 
-  // Update package.json with the project name
-  // Read the package.json file
-  const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
-  // Update the name property
-  packageJson.name = projectName;
-  // If the user does not want to use @nuxt/ui, remove it from the dependencies
-  if (!useNuxtUi) {
-    delete packageJson.dependencies["@nuxt/ui"];
+// Function to update package.json
+async function updatePackageJson(projectName, license, useNuxtUi) {
+  try {
+    const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
+    packageJson.name = projectName;
+    packageJson.license = license;
+    if (!useNuxtUi) {
+      delete packageJson.dependencies["@nuxt/ui"];
+    }
+    fs.writeFileSync("package.json", JSON.stringify(packageJson, null, 2));
+  } catch (error) {
+    shell.echo("🚨 Error occurred while updating package.json:", error);
   }
-  // Write the updated package.json back to the file
-  fs.writeFileSync("package.json", JSON.stringify(packageJson, null, 2));
+}
 
-  // Update nuxt.config.ts with the selected modules
-  // Read the nuxt.config.ts file
-  const nuxtConfig = fs.readFileSync("nuxt.config.ts", "utf8");
-  // Make a copy of the nuxt.config.ts content
-  let newNuxtConfig = nuxtConfig;
-  // If the user does not want to use @nuxt/ui, remove it from the modules
-  if (!useNuxtUi) {
-    newNuxtConfig = newNuxtConfig.replace("'@nuxt/ui',", "");
-  }
-
-  // If the user does not want to use Nuxt Content, remove it from the modules and package.json
-  if (!useNuxtContent) {
-    newNuxtConfig = newNuxtConfig.replace("'@nuxt/content',", "");
-    try {
-      newNuxtConfig = newNuxtConfig.replace(
+// Function to update nuxt.config.ts
+async function updateNuxtConfig(useNuxtUi, useNuxtContent) {
+  try {
+    let nuxtConfig = fs.readFileSync("nuxt.config.ts", "utf8");
+    if (!useNuxtUi) {
+      nuxtConfig = nuxtConfig.replace("'@nuxt/ui',", "");
+    }
+    if (!useNuxtContent) {
+      nuxtConfig = nuxtConfig.replace("'@nuxt/content',", "");
+      nuxtConfig = nuxtConfig.replace(
         /content: { documentDriven: true },/g,
         ""
       );
-    } catch (error) {
-      console.error(
-        "An error occurred while removing content config from nuxt.config.ts file:",
-        error
-      );
-    }
-    delete packageJson.dependencies["@nuxt/content"];
-    fs.writeFileSync("package.json", JSON.stringify(packageJson, null, 2));
-    // Remove the /content/ folder and any Prose*.vue components in the /components/ folder
-    if (shell.exec("rm -rf ./content").code !== 0) {
-      shell.echo("🚨 Oops! Failed to remove /content/ folder 😿");
-    }
-    if (shell.exec("rm ./components/content/Prose*.vue").code !== 0) {
-      shell.echo(
-        "🚨 Oops! Failed to remove Nuxt Content Prose*.vue components 😿"
-      );
-    }
-  }
-
-  // Write the updated nuxt.config.ts back to the file
-  fs.writeFileSync("nuxt.config.ts", newNuxtConfig);
-
-  // remove existing git repo
-  if (shell.exec("rm -rf .git").code !== 0) {
-    shell.echo("🚨 Oops! Failed to remove existing git repo 😿");
-  }
-
-  if (shell.exec("git init").code !== 0) {
-    shell.echo("🚨 Oops! Git init failed 😿");
-  }
-
-  // Check that we have a git repo
-  const repoVisibility = isRepoPublic ? "public" : "private";
-
-  // Create a new GitHub repository from the current directory
-  if (
-    shell.exec(
-      `gh repo create room302studio/${projectName} --${repoVisibility} --source=${shell.pwd()}`
-    ).code !== 0
-  ) {
-    shell.echo("🚨 Oops! Failed to create GitHub repository 😿");
-  }
-
-  // Commit the initilization and push
-  if (shell.exec("git add .").code !== 0) {
-    shell.echo("🚨 Oops! Git add failed 😿");
-  }
-
-  if (shell.exec(`git commit -m "feat: begin project 🪴"`).code !== 0) {
-    shell.echo("🚨 Oops! Git commit failed 😿");
-  }
-
-  if (shell.exec("git push -u origin main").code !== 0) {
-    shell.echo("🚨 Oops! Git push failed 😿");
-  }
-
-  // Set up Netlify deployment if user wants to use Netlify
-  if (useNetlify) {
-    // Initialize a new Netlify site
-    if (shell.exec(`netlify init`, { stdio: "inherit" }).code !== 0) {
-      shell.echo("🚨 Oops! Netlify site creation failed 😿");
-    }
-
-    // Set up continuous deployment
-    if (shell.exec("netlify build").code !== 0) {
-      shell.echo("🚨 Oops! Netlify build failed 😿");
-    }
-  }
-
-  if (useGithubForEnv) {
-    // Copy .env-example to .env before we can read/write it
-    if (shell.cp(".env-example", ".env").code !== 0) {
-      shell.echo("🚨 Oops! Failed to copy .env-example to .env 😿");
-    }
-    // Set up the .env based on the github organization secrets
-    if (shell.exec("gh secret list").code !== 0) {
-      shell.echo("🚨 Oops! Failed to fetch GitHub secrets 😿");
-    }
-    // Assuming the secrets are named as per the keys in .env file
-    const envKeys = fs
-      .readFileSync(".env", "utf8")
-      .split("\n")
-      .map((line) => line.split("=")[0]);
-    envKeys.forEach((key) => {
-      const secretViewResult = shell.exec(`gh secret view ${key} --json`, {
-        silent: true,
-      });
-      if (secretViewResult.code !== 0) {
-        shell.echo(
-          `🚨 Oops! .env secret ${key} was not found in GitHub org secrets`
-        );
-      } else {
-        let secretValue;
-        try {
-          secretValue = JSON.parse(secretViewResult.stdout).namedValue.secret
-            .value;
-        } catch (error) {
-          shell.echo(`🚨 Oops! Failed to parse secret ${key} 😿`);
-        }
-        fs.appendFileSync(".env", `${key}=${secretValue}\n`);
+      const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
+      delete packageJson.dependencies["@nuxt/content"];
+      fs.writeFileSync("package.json", JSON.stringify(packageJson, null, 2));
+      if (shell.exec("rm -rf ./content").code !== 0) {
+        shell.echo("🚨 Oops! Failed to remove /content/ folder 😿");
       }
-    });
+      if (shell.exec("rm ./components/content/Prose*.vue").code !== 0) {
+        shell.echo(
+          "🚨 Oops! Failed to remove Nuxt Content Prose*.vue components 😿"
+        );
+      }
+    }
+    fs.writeFileSync("nuxt.config.ts", nuxtConfig);
+  } catch (error) {
+    shell.echo("🚨 Error occurred while updating nuxt.config.ts:", error);
   }
+}
 
-  // Open the cloned repo in the code editor
-  if (shell.exec("code .").code !== 0) {
-    shell.echo("🚨 Oops! Tried and failed to open the repo in VSCode 😿");
+// Function to initialize a new git repo
+async function initGitRepo() {
+  try {
+    if (shell.exec("rm -rf .git").code !== 0) {
+      shell.echo("🚨 Oops! Failed to remove existing git repo 😿");
+    }
+    if (shell.exec("git init").code !== 0) {
+      shell.echo("🚨 Oops! Git init failed 😿");
+    }
+  } catch (error) {
+    shell.echo("🚨 Error occurred while initializing a new git repo:", error);
   }
+}
 
-  // Install dependencies
-  if (shell.exec("yarn install").code !== 0) {
-    shell.echo("🚨 Oops! npm install failed 😿");
+// Function to create a new GitHub repository
+async function createGitHubRepo(
+  projectName,
+  isRepoPublic,
+  githubOrg,
+  customGithubOrg
+) {
+  try {
+    const repoVisibility = isRepoPublic ? "public" : "private";
+    let githubOrgName = "";
+    if (githubOrg === "personal") {
+      githubOrgName = "";
+    } else if (githubOrg === "room302studio") {
+      githubOrgName = "room302studio/";
+    } else {
+      githubOrgName = `${customGithubOrg}/`;
+    }
+    if (
+      shell.exec(
+        `gh repo create ${githubOrgName}${projectName} --${repoVisibility} --source=${shell.pwd()}`
+      ).code !== 0
+    ) {
+      shell.echo("🚨 Oops! Failed to create GitHub repository 😿");
+    }
+  } catch (error) {
+    shell.echo("🚨 Error occurred while creating GitHub repository:", error);
   }
+}
+
+// Function to commit and push changes
+async function commitAndPush(autoCommitPush) {
+  try {
+    if (autoCommitPush) {
+      if (shell.exec("git add .").code !== 0) {
+        shell.echo("🚨 Oops! Git add failed 😿");
+      }
+      if (shell.exec(`git commit -m "feat: begin project 🪴"`).code !== 0) {
+        shell.echo("🚨 Oops! Git commit failed 😿");
+      }
+      if (shell.exec("git push -u origin main").code !== 0) {
+        shell.echo("🚨 Oops! Git push failed 😿");
+      }
+    }
+  } catch (error) {
+    shell.echo(
+      "🚨 Error occurred while committing and pushing changes:",
+      error
+    );
+  }
+}
+
+// Function to open the cloned repo in the code editor
+async function openInEditor() {
+  try {
+    if (shell.exec("code .").code !== 0) {
+      shell.echo("🚨 Oops! Tried and failed to open the repo in VSCode 😿");
+    }
+  } catch (error) {
+    shell.echo("🚨 Error occurred while opening the repo in VSCode:", error);
+  }
+}
+
+// Function to install dependencies
+async function installDependencies() {
+  try {
+    if (shell.exec("yarn install").code !== 0) {
+      shell.echo("🚨 Oops! yarn install failed 😿");
+    }
+  } catch (error) {
+    shell.echo("🚨 Error occurred while installing dependencies:", error);
+  }
+}
+
+// Main function
+async function main() {
+  await checkNodeVersion();
+  await checkSupabaseCLI();
+  await checkGitHubCLI();
+
+  const answers = await promptUser();
+  const {
+    projectName,
+    useNuxtContent,
+    useNuxtUi,
+    isRepoPublic,
+    license,
+    githubOrg,
+    customGithubOrg,
+    autoCommitPush,
+  } = answers;
+
+  await cloneTemplateRepo(projectName);
+
+  shell.cd(projectName);
+
+  await updateNuxtConfig(useNuxtUi, useNuxtContent);
+
+  await initGitRepo();
+  await updatePackageJson(projectName, license, useNuxtUi);
+  await createGitHubRepo(projectName, isRepoPublic, githubOrg, customGithubOrg);
+
+  await commitAndPush(autoCommitPush);
+
+  await openInEditor();
+  await installDependencies();
 }
 
 // Call the main function
 main();
+
+/*
+Instructions for adding a new step:
+
+1. Define a new question in the `inquirer.prompt` array to gather the necessary input from the user.
+2. Add a new property to the `answers` object destructuring to capture the user's input.
+3. Implement the logic for the new step in a `try/catch` block so that any errors are caught and logged.
+4. If the new step involves modifying files, make sure to update the relevant files (e.g., package.json, nuxt.config.ts) accordingly.
+5. If the new step requires executing shell commands, use `shell.exec` and handle any potential errors.
+6. Add appropriate error handling and logging for the new step.
+
+Example: Adding a new step to create a README.md file
+
+1. Add a new question to the `inquirer.prompt` array:
+   {
+     type: 'confirm',
+     name: 'createReadme',
+     message: '📝 Do you want to create a README.md file?',
+     default: true,
+   }
+
+2. Add the new property to the `answers` object destructuring:
+   const { ..., createReadme } = answers;
+
+3. Implement the logic for creating the README.md file:
+   try {
+     if (createReadme) {
+       fs.writeFileSync('README.md', `# ${projectName}\n\nThis is a README file for ${projectName}.`);
+       shell.echo('📝 README.md file created successfully!');
+     }
+   } catch (error) {
+     shell.echo('🚨 Error occurred while creating README.md file:', error);
+   }
+
+4. The new step is now added to the script!
+*/
