@@ -1,0 +1,32 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          cache: 'yarn'
+          
+      - name: Install dependencies
+        run: yarn install
+        
+      - name: Run tests
+        run: yarn test
+        
+      - name: Add coverage to PR
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "Test Results:" >> $GITHUB_STEP_SUMMARY
+          echo "$(cat coverage/lcov-report/index.html | grep -A 4 '<div class="clearfix">')" >> $GITHUB_STEP_SUMMARY 

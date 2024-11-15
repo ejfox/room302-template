@@ -12,6 +12,37 @@
     "shelljs": "^0.8.4"
   },
   "scripts": {
-    "start": "node index.js"
-  }
+    "start": "node index.js",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.x.x",
+    "@babel/plugin-transform-modules-commonjs": "^7.x.x",
+    "@jest/globals": "^29.x.x",
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.jsx?$": "babel-jest"
+    },
+    "testEnvironment": "node",
+    "moduleFileExtensions": [
+      "js",
+      "json"
+    ],
+    "collectCoverage": true,
+    "coverageReporters": [
+      "text",
+      "lcov"
+    ],
+    "coverageDirectory": "coverage",
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ],
+    "moduleDirectories": [
+      "node_modules"
+    ]
+  },
+  "type": "commonjs"
 }

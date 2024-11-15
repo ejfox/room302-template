@@ -40,3 +40,16 @@ This wizard sets up a development environment for a project, including checks fo
 
 ## Conclusion
 The script automates the process of setting up a new project environment, ensuring all necessary tools and configurations are in place.
+
+## Template Repository
+
+This CLI uses [room302studio/nuxt-template](https://github.com/room302studio/nuxt-template) as its base template. The template includes:
+
+- Nuxt 3 setup with TypeScript
+- @nuxt/ui (optional)
+- Tailwind CSS configuration
+- Basic project structure
+- GitHub Actions setup
+- Essential configuration files
+
+You can view the template repository [here](https://github.com/room302studio/nuxt-template).
